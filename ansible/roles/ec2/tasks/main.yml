@@ -1,0 +1,103 @@
+---
+
+
+- name: Install aptitude using apt
+  apt:
+    name: aptitude
+    state: latest
+    update_cache: yes 
+    force_apt_get: yes
+
+- name: Install required system packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - software-properties-common
+    - python3-pip
+    - virtualenv
+    - python3-setuptools
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu bionic stable
+    state: present
+
+- name: Update apt and install docker-ce  docker-compose
+  apt:
+    update_cache: yes
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - docker-ce
+    - docker-compose
+
+
+- name: Add user to docker group
+  user:
+    name: ubuntu
+    group: docker
+    append: yes
+
+
+- name: install wget
+  apt:
+    name: wget
+    state: present
+
+
+- name: Update APT package manager repositories cache
+  apt:
+    update_cache: yes
+
+- name: install openjdk
+  apt:
+    name: openjdk-8-jdk
+    state: present
+
+- name: ensure the jenkins apt repository key is installed
+  apt_key: 
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+    state: present
+
+- name: ensure the repository is configured
+  apt_repository:
+    repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+    state: present
+
+
+- name: ensure jenkins is installed
+  apt:
+    name: jenkins
+    update_cache: yes
+
+- name: ensure jenkins is running
+  service: 
+    name: jenkins
+    state: started
+
+- name: init password jenkin
+  shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+  changed_when: false
+  register: result
+  ignore_errors: yes
+
+
+- name: print init password jenkins
+  debug:
+    var: result.stdout
+
+- name: Add jenkins user to docker group
+  user:
+    name: jenkins
+    group: docker
+    append: yes
